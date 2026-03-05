@@ -1,14 +1,11 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { ChevronRight, X, User, FileText, Loader2 } from 'lucide-react';
+import { ChevronRight, X, User, FileText, Loader2, UserCircle2 } from 'lucide-react';
 
-/**
- * Pantalla 3: Modal de Búsqueda de Cliente - One Play Perú
- * Integración con API n8n usando Query Parameters
- * Parámetros: dni o correo
- */
 export default function SearchModal() {
-  const { setStep, setUserData } = useAuth();
+  const { setStep, setUserData, setUsersList, userRole } = useAuth();
+  const isClient = userRole === 'client';
+
   const [searchType, setSearchType] = useState<'dni' | 'correo'>('dni');
   const [searchValue, setSearchValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -20,8 +17,6 @@ export default function SearchModal() {
     setError('');
 
     try {
-      // Como fetch no permite body en métodos GET, pasamos los datos como query parameters.
-      // Asegúrate de que tu nodo Webhook en n8n esté configurado para leer "Query Parameters".
       const url = new URL('http://191.98.169.6:5678/webhook/get_user');
       url.searchParams.append(searchType, searchValue);
 
@@ -39,37 +34,45 @@ export default function SearchModal() {
 
       const data = await response.json();
 
-      // normaliza respuesta a un solo usuario
-      const userObj: any = Array.isArray(data) ? data[0] : data;
-
-      // validación fiera: el objeto debe existir y contener al menos un campo útil
       const userHasContent = (u: any) => {
         if (!u || typeof u !== 'object') return false;
-        // si la respuesta viene envuelta en { user: ... }
         if ('user' in u) {
           u = u.user;
           if (!u || typeof u !== 'object') return false;
         }
-        // tiene que haber un email válido para considerar que hay datos
         if (!u.email || String(u.email).trim() === '') return false;
-        // si buscamos por DNI aseguramos además que el rut exista
         if (searchType === 'dni') {
           if (!u.rut || String(u.rut).trim() === '') return false;
         }
         return true;
       };
 
-      if (!userHasContent(userObj)) {
-        const searchTypeLabel = searchType === 'dni' ? 'DNI' : 'correo';
-        setError(`❌ Usuario con ${searchTypeLabel} no encontrado. Por favor, verifica los datos e intenta de nuevo.`);
+      setUsersList([]);
+
+      const validUsers: any[] = [];
+      if (Array.isArray(data)) {
+        data.forEach(item => {
+          if (userHasContent(item)) validUsers.push(item);
+        });
+      } else {
+        if (userHasContent(data)) validUsers.push(data);
+      }
+
+      if (validUsers.length === 0) {
+        const label = searchType === 'dni' ? 'DNI' : 'correo';
+        setError(`❌ No se encontró ninguna cuenta con ese ${label}. Verifica los datos e intenta de nuevo.`);
         return;
       }
 
-      // aquí sabemos que el objeto es válido
-      setUserData(userObj);
-      setStep('user-info');
+      if (validUsers.length > 1) {
+        setUsersList(validUsers);
+        setStep('user-list');
+      } else {
+        setUserData(validUsers[0]);
+        setStep('user-info');
+      }
     } catch (err) {
-      setError(`Error al conectar con n8n: ${err instanceof Error ? err.message : 'Intenta de nuevo.'}`);
+      setError(`Error al conectar: ${err instanceof Error ? err.message : 'Intenta de nuevo.'}`);
     } finally {
       setIsLoading(false);
     }
@@ -82,12 +85,30 @@ export default function SearchModal() {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 animate-in fade-in duration-300">
-      {/* Modal */}
-      <div className="bg-card rounded-2xl shadow-2xl max-w-md w-full animate-in slide-in-from-bottom-4 duration-300 border border-border">
-        {/* Header del modal */}
-        <div className="flex items-center justify-between p-6 border-b border-border bg-gradient-to-r from-primary/10 to-accent/10">
-          <h2 className="text-xl font-bold text-foreground">Buscar Cliente</h2>
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 animate-in fade-in duration-300">
+      <div className="bg-card rounded-2xl shadow-2xl max-w-md w-full my-4 sm:my-8 animate-in slide-in-from-bottom-4 duration-300 border border-border flex flex-col max-h-[90vh]">
+
+        {/* Header */}
+        <div className={`flex items-center justify-between p-4 sm:p-6 border-b border-border shrink-0 ${isClient ? 'bg-gradient-to-r from-accent/10 to-cyan-500/10' : 'bg-gradient-to-r from-primary/10 to-accent/10'}`}>
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${isClient ? 'bg-accent/20' : 'bg-primary/20'}`}>
+              {isClient
+                ? <UserCircle2 className="h-5 w-5 text-accent" />
+                : <User className="h-5 w-5 text-primary" />
+              }
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-foreground">
+                {isClient ? 'Buscar Mi Cuenta' : 'Buscar Cliente'}
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {isClient
+                  ? 'Ingresa tu DNI o correo para encontrar tu cuenta'
+                  : 'Ingresa el DNI o correo del cliente'
+                }
+              </p>
+            </div>
+          </div>
           <button
             onClick={handleGoBack}
             className="p-1 hover:bg-secondary rounded-lg transition-colors"
@@ -96,48 +117,49 @@ export default function SearchModal() {
           </button>
         </div>
 
-        {/* Contenido del modal */}
-        <form onSubmit={handleSearch} className="p-6 space-y-6">
-          {/* Descripción */}
-          <p className="text-muted-foreground text-sm">
-            Selecciona cómo deseas buscar al cliente y luego ingresa el valor.
-          </p>
+        {/* Form */}
+        <form onSubmit={handleSearch} className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto flex-1">
 
-          {/* Selector de tipo de búsqueda */}
+          {/* Selector tipo de búsqueda */}
           <div className="space-y-2">
             <label htmlFor="searchType" className="block text-sm font-medium text-foreground">
               Buscar por:
             </label>
-            <select
-              id="searchType"
-              value={searchType}
-              onChange={(e) => setSearchType(e.target.value as 'dni' | 'correo')}
-              className="input-field w-full"
-            >
-              <option value="dni">DNI</option>
-              <option value="correo">Correo</option>
-            </select>
+            <div className="grid grid-cols-2 gap-2">
+              {(['dni', 'correo'] as const).map(type => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => { setSearchType(type); setSearchValue(''); setError(''); }}
+                  className={`py-2.5 px-4 rounded-lg text-sm font-medium transition-all border ${searchType === type
+                      ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                      : 'bg-secondary/50 text-muted-foreground border-border hover:border-primary/50 hover:text-foreground'
+                    }`}
+                >
+                  {type === 'dni' ? '📋 DNI' : '📧 Correo'}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Campo de entrada */}
           <div className="space-y-2">
             <label htmlFor="search" className="block text-sm font-medium text-foreground">
-              {searchType === 'dni' ? 'Número de DNI' : 'Correo del Cliente'}
+              {searchType === 'dni'
+                ? isClient ? 'Tu número de DNI' : 'Número de DNI del cliente'
+                : isClient ? 'Tu correo electrónico' : 'Correo del cliente'
+              }
             </label>
             <div className="relative">
-              {searchType === 'dni' ? (
-                <FileText className="absolute left-3 top-3.5 h-5 w-5 text-primary" />
-              ) : (
-                <User className="absolute left-3 top-3.5 h-5 w-5 text-accent" />
-              )}
+              {searchType === 'dni'
+                ? <FileText className="absolute left-3 top-3.5 h-5 w-5 text-primary" />
+                : <User className="absolute left-3 top-3.5 h-5 w-5 text-accent" />
+              }
               <input
                 id="search"
-                type="text"
+                type={searchType === 'correo' ? 'email' : 'text'}
                 value={searchValue}
-                onChange={(e) => {
-                  setSearchValue(e.target.value);
-                  setError('');
-                }}
+                onChange={(e) => { setSearchValue(e.target.value); setError(''); }}
                 placeholder={searchType === 'dni' ? 'Ej: 12345678' : 'Ej: usuario@example.com'}
                 className="input-field pl-10"
                 disabled={isLoading}
@@ -147,26 +169,28 @@ export default function SearchModal() {
             </div>
           </div>
 
-          {/* Mensaje de error */}
+          {/* Error */}
           {error && (
             <div className="p-3 bg-destructive/20 border border-destructive rounded-lg">
               <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
 
-          {/* Información de ayuda */}
-          <div className="p-3 bg-accent/20 border border-accent rounded-lg">
-            <p className="text-xs text-accent">
-              <strong>Tip:</strong> Asegúrate de ingresar {searchType === 'dni' ? 'el DNI correcto' : 'el correo válido'} del cliente.
-            </p>
+          {/* Tip */}
+          <div className={`p-3 rounded-lg border text-xs ${isClient ? 'bg-accent/10 border-accent/30 text-accent' : 'bg-accent/10 border-accent/30 text-accent'}`}>
+            <strong>Tip:</strong>{' '}
+            {isClient
+              ? `Si tienes múltiples cuentas registradas con el mismo ${searchType === 'dni' ? 'DNI' : 'correo'}, te aparecerán todas para que elijas la que quieres ver.`
+              : `Asegúrate de ingresar ${searchType === 'dni' ? 'el DNI correcto' : 'el correo válido'} del cliente.`
+            }
           </div>
         </form>
 
-        {/* Footer del modal */}
-        <div className="flex gap-3 p-6 border-t border-border bg-secondary/50 rounded-b-2xl">
+        {/* Footer */}
+        <div className="flex flex-col sm:flex-row gap-3 p-4 sm:p-6 border-t border-border bg-secondary/50 rounded-b-2xl shrink-0">
           <button
             onClick={handleGoBack}
-            className="btn-secondary flex-1"
+            className="btn-secondary flex-1 w-full sm:w-auto"
             disabled={isLoading}
           >
             Cancelar
@@ -174,7 +198,7 @@ export default function SearchModal() {
           <button
             onClick={(e) => handleSearch(e as any)}
             disabled={isLoading || !searchValue.trim()}
-            className="btn-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-primary flex-1 w-full sm:w-auto flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <>
@@ -183,7 +207,7 @@ export default function SearchModal() {
               </>
             ) : (
               <>
-                Siguiente
+                {isClient ? 'Buscar mi cuenta' : 'Siguiente'}
                 <ChevronRight className="h-4 w-4" />
               </>
             )}

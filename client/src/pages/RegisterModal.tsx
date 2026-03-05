@@ -358,7 +358,7 @@ export default function RegisterModal({ isOpen, onClose }: RegisterModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-1 sm:p-2 z-50 overflow-y-auto">
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-1 sm:p-2 z-50 overflow-y-auto">
       <div className="bg-card rounded-2xl shadow-2xl w-full max-w-3xl border border-border my-2">
         <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border bg-gradient-to-r from-primary/10 to-accent/10">
           <h2 className="text-lg sm:text-2xl font-bold text-foreground">Crear Cuenta de Usuario</h2>

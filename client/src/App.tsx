@@ -7,6 +7,7 @@ import SearchModal from "@/pages/SearchModal";
 import LoadingScreen from "@/pages/LoadingScreen";
 import SuccessScreen from "@/pages/SuccessScreen";
 import UserInfoScreen from "@/pages/UserInfoScreen";
+import UserListScreen from "@/pages/UserListScreen";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 
@@ -27,8 +28,8 @@ function Router() {
       {/* Pantalla 1: Login */}
       {currentStep === 'login' && <Login />}
 
-      {/* Pantalla 2: Dashboard */}
-      {currentStep === 'dashboard' && <Dashboard />}
+      {/* Pantalla 2: Dashboard (Se renderiza siempre que estemos logueados, de fondo) */}
+      {currentStep !== 'login' && <Dashboard />}
 
       {/* Pantalla 3: Modal de busqueda */}
       {currentStep === 'search' && <SearchModal />}
@@ -41,6 +42,9 @@ function Router() {
 
       {/* Pantalla 6: Pantalla de exito */}
       {currentStep === 'success' && <SuccessScreen />}
+
+      {/* Pantalla 7: Lista de usuarios */}
+      {currentStep === 'user-list' && <UserListScreen />}
     </>
   );
 }
