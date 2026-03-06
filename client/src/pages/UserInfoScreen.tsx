@@ -10,7 +10,7 @@ interface Region { rg_id: number; nombre: string; }
 interface Role { id: number; name: string; slug: string; }
 
 export default function UserInfoScreen() {
-  const { userData, usersList, setStep, userRole } = useAuth();
+  const { userData, usersList, setStep, setUserData, userRole } = useAuth();
   const isAdmin = userRole === 'admin';
 
   const [formData, setFormData] = useState({
@@ -80,6 +80,7 @@ export default function UserInfoScreen() {
       const filtered = loadedCommunes.filter(
         (c: any) => c.rg_id === derivedRgId || String(c.rg_id) === String(derivedRgId)
       );
+      filtered.sort((a: Commune, b: Commune) => a.nombre.localeCompare(b.nombre, 'es'));
       setCommunes(filtered);
     }
 
@@ -146,6 +147,7 @@ export default function UserInfoScreen() {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (field === 'rg_id') {
       const filtered = allCommunes.filter((c: any) => String(c.rg_id) === String(value));
+      filtered.sort((a: Commune, b: Commune) => a.nombre.localeCompare(b.nombre, 'es'));
       setCommunes(filtered);
       setFormData(prev => ({ ...prev, rg_id: value, co_id: '' }));
     }
@@ -228,6 +230,30 @@ export default function UserInfoScreen() {
       setSuccess(true);
       setEditing({});
       if (!isAdmin) handleChange('password', '');
+
+      // Sync updated form data back into context so re-entering this screen shows fresh values
+      if (userData) {
+        const updatedUserData = {
+          ...userData,
+          nombres: formData.nombres,
+          paterno: formData.paterno,
+          materno: formData.materno,
+          gd_id: formData.gd_id ? parseInt(formData.gd_id) : userData.gd_id,
+          sexo: formData.sexo || userData.sexo,
+          telefono: formData.telefono,
+          nacimiento: formData.nacimiento,
+          email: formData.email,
+          parental_lock: formData.parental_lock,
+          limit_movil: formData.limit_movil,
+          rg_id: formData.rg_id ? parseInt(formData.rg_id) : userData.rg_id,
+          co_id: formData.co_id ? parseInt(formData.co_id) : userData.co_id,
+          role_id: formData.role_id ? parseInt(formData.role_id) : userData.role_id,
+          estado: formData.estado,
+          direccion: formData.direccion,
+        };
+        setUserData(updatedUserData);
+      }
+
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       setSubmitError(`Error al actualizar: ${err instanceof Error ? err.message : 'Intenta de nuevo'}`);

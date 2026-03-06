@@ -211,6 +211,7 @@ export default function RegisterModal({ isOpen, onClose }: RegisterModalProps) {
 
     if (field === 'rg_id') {
       const filtered = allCommunes.filter((c: any) => String(c.rg_id) === String(value));
+      filtered.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
       setCommunes(filtered);
       setFormData(prev => ({ ...prev, rg_id: value, co_id: '' }));
       if (touched['co_id']) {
