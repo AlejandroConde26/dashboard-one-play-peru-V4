@@ -85,7 +85,7 @@ export default function RegisterModal({ isOpen, onClose }: RegisterModalProps) {
       setCommunes([]);
 
       try {
-        const rolesResponse = await fetch('http://191.98.169.6:5678/webhook/get_rol', {
+        const rolesResponse = await fetch('https://n8n-oneplaype.cd-latam.com:5678/webhook/get_rol', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -299,7 +299,7 @@ export default function RegisterModal({ isOpen, onClose }: RegisterModalProps) {
         payload.direccion = formData.direccion.trim();
       }
 
-      const response = await fetch('http://191.98.169.6:5678/webhook/create_user', {
+      const response = await fetch('https://n8n-oneplaype.cd-latam.com:5678/webhook/create_user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

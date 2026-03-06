@@ -36,7 +36,7 @@ export default function SuccessScreen() {
 
     try {
       // Enviar POST a n8n con DNI y contraseña generada
-      const response = await fetch('http://191.98.169.6:5678/webhook/update_user', {
+      const response = await fetch('https://n8n-oneplaype.cd-latam.com:5678/webhook/update_user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -153,11 +153,10 @@ export default function SuccessScreen() {
               <button
                 onClick={handleCopyPassword}
                 disabled={isSaving}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all duration-200 border ${
-                  copied
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all duration-200 border ${copied
                     ? 'bg-primary/20 text-primary border-primary'
                     : 'bg-secondary text-foreground border-border hover:bg-secondary/80 disabled:opacity-50 disabled:cursor-not-allowed'
-                }`}
+                  }`}
               >
                 <Copy className="w-4 h-4" />
                 {copied ? 'Copiado!' : 'Copiar'}

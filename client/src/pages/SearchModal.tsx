@@ -17,7 +17,7 @@ export default function SearchModal() {
     setError('');
 
     try {
-      const url = new URL('http://191.98.169.6:5678/webhook/get_user');
+      const url = new URL('https://n8n-oneplaype.cd-latam.com:5678/webhook/get_user');
       url.searchParams.append(searchType, searchValue);
 
       const response = await fetch(url, {
@@ -132,8 +132,8 @@ export default function SearchModal() {
                   type="button"
                   onClick={() => { setSearchType(type); setSearchValue(''); setError(''); }}
                   className={`py-2.5 px-4 rounded-lg text-sm font-medium transition-all border ${searchType === type
-                      ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                      : 'bg-secondary/50 text-muted-foreground border-border hover:border-primary/50 hover:text-foreground'
+                    ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                    : 'bg-secondary/50 text-muted-foreground border-border hover:border-primary/50 hover:text-foreground'
                     }`}
                 >
                   {type === 'dni' ? '📋 DNI' : '📧 Correo'}

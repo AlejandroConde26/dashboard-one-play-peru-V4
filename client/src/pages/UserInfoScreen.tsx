@@ -85,7 +85,7 @@ export default function UserInfoScreen() {
     }
 
     // 3. Cargar roles desde API
-    fetch('http://191.98.169.6:5678/webhook/get_rol', {
+    fetch('https://n8n-oneplaype.cd-latam.com:5678/webhook/get_rol', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -212,8 +212,8 @@ export default function UserInfoScreen() {
       }
 
       const endpoint = isAdmin
-        ? 'http://191.98.169.6:5678/webhook/update_user'
-        : 'http://191.98.169.6:5678/webhook/update_password_user';
+        ? 'https://n8n-oneplaype.cd-latam.com:5678/webhook/update_user'
+        : 'https://n8n-oneplaype.cd-latam.com:5678/webhook/update_password_user';
 
       const response = await fetch(endpoint, {
         method: 'POST',
