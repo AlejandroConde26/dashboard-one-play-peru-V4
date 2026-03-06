@@ -1,19 +1,30 @@
-FROM node:20-alpine
+# ── Etapa 1: Build ──────────────────────────────────────────────────────────
+FROM node:20-alpine AS build
 
 WORKDIR /app
 
-# Copiamos archivos de dependencias
-COPY package*.json ./
-# Si usas pnpm (porque vi el lock), descomenta la siguiente linea:
-# RUN npm install -g pnpm && pnpm install
-RUN npm install
+# Instalar pnpm (el proyecto lo usa como packageManager)
+RUN corepack enable && corepack prepare pnpm@10.4.1 --activate
 
-# Copiamos todo el código
+# Copiar archivos de dependencias primero (cache de capas)
+COPY package.json pnpm-lock.yaml ./
+COPY patches ./patches
+
+RUN pnpm install --frozen-lockfile
+
+# Copiar todo el código fuente
 COPY . .
 
-# Exponemos el puerto donde corre Vite normalmente
-EXPOSE 3000
+# Construir los assets estáticos con Vite (salen a dist/public)
+RUN pnpm run build
 
-# Comando para arrancar. 
-# Forzamos el puerto 3000 y el host 0.0.0.0 para que Docker lo detecte
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]
+# ── Etapa 2: Producción con Nginx ───────────────────────────────────────────
+FROM nginx:stable-alpine
+
+# Copiar los archivos estáticos generados por Vite
+COPY --from=build /app/dist/public /usr/share/nginx/html
+
+# Nginx escucha en el puerto 80 por defecto
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

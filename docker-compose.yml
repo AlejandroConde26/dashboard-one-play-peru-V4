@@ -2,11 +2,6 @@ version: '3.8'
 services:
   dashboard:
     build: .
-    container_name: dashboard-v4
+    container_name: dashboard-one-play
     ports:
-      - "8083:3000"  # Tu PC (8083) -> Contenedor (3000)
-    volumes:
-      - .:/app
-      - /app/node_modules
-    environment:
-      - NODE_ENV=development
+      - "8083:80"
